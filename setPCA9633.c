@@ -33,6 +33,7 @@ static struct argp_option options[] = {
     {"mode2",    '2', "0xXX",                  0,  "set mode1 to 0xXX" },
     {"wake",     'w', "[WAKE|SLEEP]",          0,  "WAKE or SLEEP (no output during SLEEP)" },
     {"invert",   'i', "[NO|YES]",              0,  "Invert PWM? YES/NO" },
+    {"outdrv",   'd', "[NO|YES]",              0,  "OUTDRV on? YES/NO" },
     { 0 }
 };
 
@@ -64,6 +65,7 @@ struct arguments
     
     char* wake_str;
     char* invert_str;
+    char* outdrv_str;
     
     //    char* setting_str;        //the value to set the configuration to
     //    uint8_t register_already_chosen;
@@ -113,6 +115,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
             break;
         case 'i':
             arguments->invert_str = arg;
+            break;
+        case 'd':
+            arguments->outdrv_str = arg;
             break;
         case 'l':
             arguments->led0_str = arg;
@@ -279,6 +284,7 @@ int main (int argc, char **argv)
     arguments.i2cbus = 1;
     //arguments.setting_str = NULL;
     arguments.invert_str = NULL;
+    arguments.outdrv_str = NULL;
     arguments.wake_str = NULL;
     arguments.led0_str = NULL;
     arguments.led1_str = NULL;
@@ -342,7 +348,7 @@ int main (int argc, char **argv)
         }
     }
     
-    if(arguments.mode2_inuse || arguments.invert_str != NULL)
+    if(arguments.mode2_inuse || arguments.invert_str != NULL || arguments.outdrv_str != NULL)
     {
         uint8_t new_mode2 = 0;
         
@@ -358,6 +364,14 @@ int main (int argc, char **argv)
             else if(strcmp(arguments.invert_str, "YES") == 0)
                 new_mode2 |= 0b00010000;
             
+        }
+        
+        if(arguments.outdrv_str)
+        {
+            if(strcmp(arguments.outdrv_str, "NO") == 0)
+                new_mode2 &= 0b11111011;
+            else if(strcmp(arguments.outdrv_str, "YES") == 0)
+                new_mode2 |= 0b00000100;
         }
         
         if(new_mode2 != curr_regs.MODE2)
