@@ -29,11 +29,14 @@ static struct argp_option options[] = {
     {"pwm1",     'q', "0xXX",                  0,  "set pwm1 to 0xXX" },
     {"pwm2",     'r', "0xXX",                  0,  "set pwm2 to 0xXX" },
     {"pwm3",     's', "0xXX",                  0,  "set pwm3 to 0xXX" },
+    {"grppwm",   'g', "0xXX",                  0,  "set grppwm to 0xXX" },
+    {"grpfreq",  'h', "0xXX",                  0,  "set grpfreq to 0xXX" },
     {"mode1",    '1', "0xXX",                  0,  "set mode1 to 0xXX" },
     {"mode2",    '2', "0xXX",                  0,  "set mode1 to 0xXX" },
     {"wake",     'w', "[WAKE|SLEEP]",          0,  "WAKE or SLEEP (no output during SLEEP)" },
     {"invert",   'i', "[NO|YES]",              0,  "Invert PWM? YES/NO" },
-    {"outdrv",   'd', "[NO|YES]",              0,  "OUTDRV on? YES/NO" },
+    {"outdrv",   'd', "[OFF|ON]",              0,  "OUTDRV on? OFF/ON" },
+    {"dmblnk",   'b', "[OFF|ON]",              0,  "DMBLNK on? OFF=dimming/ON=blinking" },
     { 0 }
 };
 
@@ -52,11 +55,15 @@ struct arguments
     uint8_t pwm1;
     uint8_t pwm2;
     uint8_t pwm3;
+    uint8_t grppwm;
+    uint8_t grpfreq;
     
     uint8_t pwm0_inuse;
     uint8_t pwm1_inuse;
     uint8_t pwm2_inuse;
     uint8_t pwm3_inuse;
+    uint8_t grppwm_inuse;
+    uint8_t grpfreq_inuse;
     
     char* led0_str;
     char* led1_str;
@@ -66,6 +73,7 @@ struct arguments
     char* wake_str;
     char* invert_str;
     char* outdrv_str;
+    char* dmblnk_str;
     
     //    char* setting_str;        //the value to set the configuration to
     //    uint8_t register_already_chosen;
@@ -119,6 +127,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
         case 'd':
             arguments->outdrv_str = arg;
             break;
+        case 'b':
+            arguments->dmblnk_str = arg;
+            break;
         case 'l':
             arguments->led0_str = arg;
             break;
@@ -159,6 +170,14 @@ parse_opt (int key, char *arg, struct argp_state *state)
             arguments->pwm3 = strtoul(arg, NULL, 16);
             arguments->pwm3_inuse = 1;
             //printf("PWM3: 0x%02X\n", arguments->pwm3);
+            break;
+        case 'g':
+            arguments->grppwm = strtoul(arg, NULL, 16);
+            arguments->grppwm_inuse = 1;
+            break;
+        case 'h':
+            arguments->grpfreq = strtoul(arg, NULL, 16);
+            arguments->grpfreq_inuse = 1;
             break;
             
             
@@ -258,8 +277,8 @@ void print_curr_regs(void)
     printf("  PWM2    0x%02X (use -r to set)\n", curr_regs.PWM2);
     printf("  PWM3    0x%02X (use -s to set)\n", curr_regs.PWM3);
     
-    printf("  GRPFREQ 0x%02X\n", curr_regs.GRPPWM);
-    printf("  GRPFREQ 0x%02X\n", curr_regs.GRPPWM);
+    printf("  GRPPWM  0x%02X (use -g to set)\n", curr_regs.GRPPWM);
+    printf("  GRPFREQ 0x%02X (use -h to set)\n", curr_regs.GRPFREQ);
     
     printf("  LEDOUT  0x%02X (use -l,-m,-n,-o to set)\n", curr_regs.LEDOUT);
     
@@ -285,6 +304,7 @@ int main (int argc, char **argv)
     //arguments.setting_str = NULL;
     arguments.invert_str = NULL;
     arguments.outdrv_str = NULL;
+    arguments.dmblnk_str = NULL;
     arguments.wake_str = NULL;
     arguments.led0_str = NULL;
     arguments.led1_str = NULL;
@@ -348,7 +368,7 @@ int main (int argc, char **argv)
         }
     }
     
-    if(arguments.mode2_inuse || arguments.invert_str != NULL || arguments.outdrv_str != NULL)
+    if(arguments.mode2_inuse || arguments.invert_str != NULL || arguments.outdrv_str != NULL || arguments.dmblnk_str != NULL)
     {
         uint8_t new_mode2 = 0;
         
@@ -368,10 +388,18 @@ int main (int argc, char **argv)
         
         if(arguments.outdrv_str)
         {
-            if(strcmp(arguments.outdrv_str, "NO") == 0)
+            if(strcmp(arguments.outdrv_str, "OFF") == 0)
                 new_mode2 &= 0b11111011;
-            else if(strcmp(arguments.outdrv_str, "YES") == 0)
+            else if(strcmp(arguments.outdrv_str, "ON") == 0)
                 new_mode2 |= 0b00000100;
+        }
+        
+        if(arguments.dmblnk_str)
+        {
+            if(strcmp(arguments.dmblnk_str, "OFF") == 0)
+                new_mode2 &= 0b11011111;
+            else if(strcmp(arguments.dmblnk_str, "ON") == 0)
+                new_mode2 |= 0b00100000;
         }
         
         if(new_mode2 != curr_regs.MODE2)
@@ -421,6 +449,26 @@ int main (int argc, char **argv)
         printf("Writing PWM3 value of 0x%02X\n", arguments.pwm3);
         writeBuf[0] = 0b00000101;
         writeBuf[1] = arguments.pwm3;
+        writeBuf[2] = 0;
+        write(I2CFile, writeBuf, 2);
+        changes_made++;
+    }
+    
+    if(arguments.grppwm_inuse)
+    {
+        printf("Writing GRPPWM value of 0x%02X\n", arguments.grppwm);
+        writeBuf[0] = 0b00000110;
+        writeBuf[1] = arguments.grppwm;
+        writeBuf[2] = 0;
+        write(I2CFile, writeBuf, 2);
+        changes_made++;
+    }
+    
+    if(arguments.grpfreq_inuse)
+    {
+        printf("Writing GRPFREQ value of 0x%02X\n", arguments.grpfreq);
+        writeBuf[0] = 0b00000111;
+        writeBuf[1] = arguments.grpfreq;
         writeBuf[2] = 0;
         write(I2CFile, writeBuf, 2);
         changes_made++;
