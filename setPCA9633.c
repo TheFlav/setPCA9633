@@ -298,6 +298,7 @@ int main (int argc, char **argv)
     arguments.pwm1_inuse = 0;
     arguments.pwm2_inuse = 0;
     arguments.pwm3_inuse = 0;
+    arguments.grppwm_inuse = 0;
     arguments.mode1_inuse = 0;
     arguments.mode2_inuse = 0;
     arguments.i2cbus = 1;
