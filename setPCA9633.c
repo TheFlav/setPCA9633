@@ -37,6 +37,8 @@ static struct argp_option options[] = {
     {"invert",   'i', "[NO|YES]",              0,  "Invert PWM? YES/NO" },
     {"outdrv",   'd', "[OFF|ON]",              0,  "OUTDRV on? OFF/ON" },
     {"dmblnk",   'b', "[OFF|ON]",              0,  "DMBLNK on? OFF=dimming/ON=blinking" },
+    {"verbosity",'v', "[0|1|2]",               0,  "0=no output, 1=only output exitcode LEDn value, 2=normal full output" },
+    {"exitcode", 'e', "[0|1|2|3]",             0,  "use current LEDn value as exitcode when done" },
     { 0 }
 };
 
@@ -74,6 +76,9 @@ struct arguments
     char* invert_str;
     char* outdrv_str;
     char* dmblnk_str;
+    
+    uint8_t verbosity_level;
+    uint8_t exitcode_led;
     
     //    char* setting_str;        //the value to set the configuration to
     //    uint8_t register_already_chosen;
@@ -180,6 +185,18 @@ parse_opt (int key, char *arg, struct argp_state *state)
             arguments->grpfreq_inuse = 1;
             break;
             
+        case 'v' :
+            arguments->verbosity_level = strtoul(arg, NULL, 10);
+            break;
+            
+        case 'e' :
+            arguments->exitcode_led = strtoul(arg, NULL, 10);
+            if(arguments->exitcode_led > 3 || arguments->exitcode_led < 0)
+                arguments->exitcode_led = 0;
+            break;
+            
+            
+            
             
         case ARGP_KEY_ARG:
             if (state->arg_num >= 0)
@@ -234,7 +251,6 @@ uint8_t generate_new_ledout(uint8_t old_ledout, char *led_str, uint8_t led_num)
         exit(1);
     }
     
-    printf("LED%d being set to %d\n", led_num, ls_val);
     
     return (old_ledout & (~(0x03 << (led_num*2)))) | (ls_val << (led_num*2));
 }
@@ -269,6 +285,8 @@ void get_curr_regs(void)
 
 void print_curr_regs(void)
 {
+    printf("Register Status:\n");
+    
     printf("  MODE1   0x%02X (use -1 to set)\n", curr_regs.MODE1);
     printf("  MODE2   0x%02X (use -2 to set)\n", curr_regs.MODE2);
     
@@ -312,6 +330,9 @@ int main (int argc, char **argv)
     arguments.led2_str = NULL;
     arguments.led3_str = NULL;
     
+    arguments.verbosity_level = 2;
+    arguments.exitcode_led = 0;
+    
     /* Parse our arguments; every option seen by parse_opt will
      be reflected in arguments. */
     argp_parse (&argp, argc, argv, 0, 0, &arguments);
@@ -332,9 +353,10 @@ int main (int argc, char **argv)
     
     ioctl(I2CFile, I2C_SLAVE, arguments.PCA_i2c_address);   // Specify the address of the I2C Slave to communicate with
     
-    printf("Current Register Status:\n");
     get_curr_regs();
-    print_curr_regs();
+    
+    if(arguments.verbosity_level >= 2)
+        print_curr_regs();
     
     //    printf("  LEDOUT   0x%02X (use -l,-m,-n,-o to set)\n", curr_regs.LEDOUT);
     
@@ -360,7 +382,8 @@ int main (int argc, char **argv)
         
         if(new_mode1 != curr_regs.MODE1)
         {
-            printf("Writing MODE1 value of 0x%02X\n", arguments.mode1);
+            if(arguments.verbosity_level >= 2)
+                printf("Writing MODE1 value of 0x%02X\n", arguments.mode1);
             writeBuf[0] = 0b00000000;
             writeBuf[1] = new_mode1;
             writeBuf[2] = 0;
@@ -405,7 +428,8 @@ int main (int argc, char **argv)
         
         if(new_mode2 != curr_regs.MODE2)
         {
-            printf("Writing MODE2 value of 0x%02X\n", arguments.mode2);
+            if(arguments.verbosity_level >= 2)
+                printf("Writing MODE2 value of 0x%02X\n", arguments.mode2);
             writeBuf[0] = 0b00000001;
             writeBuf[1] = new_mode2;
             writeBuf[2] = 0;
@@ -417,7 +441,8 @@ int main (int argc, char **argv)
     
     if(arguments.pwm0_inuse)
     {
-        printf("Writing PWM0 value of 0x%02X\n", arguments.pwm0);
+        if(arguments.verbosity_level >= 2)
+            printf("Writing PWM0 value of 0x%02X\n", arguments.pwm0);
         writeBuf[0] = 0b00000010;
         writeBuf[1] = arguments.pwm0;
         writeBuf[2] = 0;
@@ -427,7 +452,8 @@ int main (int argc, char **argv)
     
     if(arguments.pwm1_inuse)
     {
-        printf("Writing PWM1 value of 0x%02X\n", arguments.pwm1);
+        if(arguments.verbosity_level >= 2)
+            printf("Writing PWM1 value of 0x%02X\n", arguments.pwm1);
         writeBuf[0] = 0b00000011;
         writeBuf[1] = arguments.pwm1;
         writeBuf[2] = 0;
@@ -437,7 +463,8 @@ int main (int argc, char **argv)
     
     if(arguments.pwm2_inuse)
     {
-        printf("Writing PWM2 value of 0x%02X\n", arguments.pwm2);
+        if(arguments.verbosity_level >= 2)
+            printf("Writing PWM2 value of 0x%02X\n", arguments.pwm2);
         writeBuf[0] = 0b00000100;
         writeBuf[1] = arguments.pwm2;
         writeBuf[2] = 0;
@@ -447,7 +474,8 @@ int main (int argc, char **argv)
     
     if(arguments.pwm3_inuse)
     {
-        printf("Writing PWM3 value of 0x%02X\n", arguments.pwm3);
+        if(arguments.verbosity_level >= 2)
+            printf("Writing PWM3 value of 0x%02X\n", arguments.pwm3);
         writeBuf[0] = 0b00000101;
         writeBuf[1] = arguments.pwm3;
         writeBuf[2] = 0;
@@ -457,7 +485,8 @@ int main (int argc, char **argv)
     
     if(arguments.grppwm_inuse)
     {
-        printf("Writing GRPPWM value of 0x%02X\n", arguments.grppwm);
+        if(arguments.verbosity_level >= 2)
+            printf("Writing GRPPWM value of 0x%02X\n", arguments.grppwm);
         writeBuf[0] = 0b00000110;
         writeBuf[1] = arguments.grppwm;
         writeBuf[2] = 0;
@@ -467,7 +496,8 @@ int main (int argc, char **argv)
     
     if(arguments.grpfreq_inuse)
     {
-        printf("Writing GRPFREQ value of 0x%02X\n", arguments.grpfreq);
+        if(arguments.verbosity_level >= 2)
+            printf("Writing GRPFREQ value of 0x%02X\n", arguments.grpfreq);
         writeBuf[0] = 0b00000111;
         writeBuf[1] = arguments.grpfreq;
         writeBuf[2] = 0;
@@ -480,25 +510,29 @@ int main (int argc, char **argv)
     if(arguments.led0_str != NULL)
     {
         new_ledout = generate_new_ledout(new_ledout, arguments.led0_str, 0);
-        printf("LED0: new ledout = 0x%02X\n", new_ledout);
+        if(arguments.verbosity_level >= 2)
+            printf("LED0: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(arguments.led1_str != NULL)
     {
         new_ledout = generate_new_ledout(new_ledout, arguments.led1_str, 1);
-        //printf("LED1: new ledout = 0x%02X\n", new_ledout);
+        if(arguments.verbosity_level >= 2)
+            printf("LED1: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(arguments.led2_str != NULL)
     {
         new_ledout = generate_new_ledout(new_ledout, arguments.led2_str, 2);
-        //printf("LED2: new ledout = 0x%02X\n", new_ledout);
+        if(arguments.verbosity_level >= 2)
+            printf("LED2: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(arguments.led3_str != NULL)
     {
         new_ledout = generate_new_ledout(new_ledout, arguments.led3_str, 3);
-        //printf("LED3: new ledout = 0x%02X\n", new_ledout);
+        if(arguments.verbosity_level >= 2)
+            printf("LED3: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(new_ledout != curr_regs.LEDOUT)
@@ -512,15 +546,61 @@ int main (int argc, char **argv)
     
     if(changes_made)
     {
-        printf("New Register Status:\n");
         get_curr_regs();
-        print_curr_regs();
+        if(arguments.verbosity_level >= 2)
+            print_curr_regs();
     }
     else
-        printf("Not updating any registers.\n");
+    {
+        if(arguments.verbosity_level >= 2)
+            printf("Not updating any registers.\n");
+    }
     
     close(I2CFile);
     
-    return 0;
+    int exitcode = 0;
+    int pwm_val = curr_regs.PWM0;
+    uint8_t led_reg = curr_regs.LEDOUT>>(arguments.exitcode_led*2) & 0b11;
+    
+    
+    switch(arguments.exitcode_led)
+    {
+        default:
+        case 0:
+            pwm_val = curr_regs.PWM0;
+            break;
+        case 1:
+            pwm_val = curr_regs.PWM1;
+            break;
+        case 2:
+            pwm_val = curr_regs.PWM2;
+            break;
+        case 3:
+            pwm_val = curr_regs.PWM3;
+            break;
+            
+    }
+    
+    switch (led_reg) //GRP
+    {
+        default:
+        case 0b11:  //GRP
+            exitcode = 10000;  //don't really know
+            break;
+        case 0b01:  //ON
+            exitcode = 255;  //full on
+            break;
+        case 0b00:  //OFF
+            exitcode = 0;  //full on
+            break;
+        case 0b10:  //PWM
+            exitcode = pwm_val;  //PWMVAL
+            break;
+    }
+    
+    
+    if(arguments.verbosity_level == 1)
+        printf("LED%d = %d\n", arguments.exitcode_led, exitcode);
+    return exitcode;
     
 }
