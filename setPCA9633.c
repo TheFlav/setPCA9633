@@ -317,6 +317,7 @@ int main (int argc, char **argv)
     arguments.pwm2_inuse = 0;
     arguments.pwm3_inuse = 0;
     arguments.grppwm_inuse = 0;
+    arguments.grpfreq_inuse = 0;
     arguments.mode1_inuse = 0;
     arguments.mode2_inuse = 0;
     arguments.i2cbus = 1;
@@ -560,32 +561,34 @@ int main (int argc, char **argv)
     
     int exitcode = 0;
     int pwm_val = curr_regs.PWM0;
-    uint8_t led_reg = curr_regs.LEDOUT>>(arguments.exitcode_led*2) & 0b11;
     
     
-    switch(arguments.exitcode_led)
-    {
-        default:
-        case 0:
-            pwm_val = curr_regs.PWM0;
-            break;
-        case 1:
-            pwm_val = curr_regs.PWM1;
-            break;
-        case 2:
-            pwm_val = curr_regs.PWM2;
-            break;
-        case 3:
-            pwm_val = curr_regs.PWM3;
-            break;
-            
-    }
     
-    switch (led_reg) //GRP
+    
+    uint8_t led_reg = (curr_regs.LEDOUT>>(arguments.exitcode_led*2)) & 0b11;
+    switch (led_reg)
     {
         default:
         case 0b11:  //GRP
             exitcode = 10000;  //don't really know
+            break;
+        case 0b10:  //PWM
+            switch(arguments.exitcode_led)
+        {
+            default:
+            case 0:
+                exitcode = curr_regs.PWM0;
+                break;
+            case 1:
+                exitcode = curr_regs.PWM1;
+                break;
+            case 2:
+                exitcode = curr_regs.PWM2;
+                break;
+            case 3:
+                exitcode = curr_regs.PWM3;
+                break;
+        }
             break;
         case 0b01:  //ON
             exitcode = 255;  //full on
@@ -593,14 +596,11 @@ int main (int argc, char **argv)
         case 0b00:  //OFF
             exitcode = 0;  //full on
             break;
-        case 0b10:  //PWM
-            exitcode = pwm_val;  //PWMVAL
-            break;
     }
     
     
     if(arguments.verbosity_level == 1)
-        printf("LED%d = %d\n", arguments.exitcode_led, exitcode);
+        printf("LED%d = %d (%d)\n", arguments.exitcode_led, exitcode, led_reg);
     return exitcode;
     
 }
