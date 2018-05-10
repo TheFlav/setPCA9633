@@ -1,21 +1,18 @@
 #include <stdio.h>
 #include <fcntl.h>     // open
 #include <inttypes.h>  // uint8_t, etc
-#include <linux/i2c-dev.h> // I2C bus definitions
 #include <stdlib.h>
-
+#include <string.h>
 #include <argp.h>
 
-int I2CFile;
-uint8_t writeBuf[0xFF];      // Buffer to store the 3 bytes that we write to the I2C device
-uint8_t readBuf[0xFF];       // Buffer to store the data read from the I2C device
+#include "PCA9633.h"
 
 /* Program documentation. */
-static char doc[] =
-"Set PCA9553 via i2c, always use -a, only use one of -l, -p, or -s";
+static char doc[] = "Set PCA9553 via i2c, always use -a, only use one of -l, -p, or -s";
 
 /* A description of the arguments we accept. */
 static char args_doc[] = "VALUE";
+
 
 /* The options we understand. */
 static struct argp_option options[] = {
@@ -41,6 +38,7 @@ static struct argp_option options[] = {
     {"exitcode", 'e', "[0|1|2|3]",             0,  "use current LEDn value as exitcode when done" },
     { 0 }
 };
+
 
 /* Used by main to communicate with parse_opt. */
 struct arguments
@@ -84,26 +82,9 @@ struct arguments
     //    uint8_t register_already_chosen;
 };
 
-struct PCA_regs
-{
-    uint8_t MODE1;
-    uint8_t MODE2;
-    uint8_t PWM0;
-    uint8_t PWM1;
-    uint8_t PWM2;
-    uint8_t PWM3;
-    uint8_t GRPPWM;
-    uint8_t GRPFREQ;
-    uint8_t LEDOUT;
-    uint8_t SUBADR1;
-    uint8_t SUBADR2;
-    uint8_t SUBADR3;
-    uint8_t ALLCALLADR;
-} curr_regs;
 
 /* Parse a single option. */
-static error_t
-parse_opt (int key, char *arg, struct argp_state *state)
+static error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
     /* Get the input argument from argp_parse, which we
      know is a pointer to our arguments structure. */
@@ -219,71 +200,13 @@ parse_opt (int key, char *arg, struct argp_state *state)
     return 0;
 }
 
+
 /* Our argp parser. */
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
 
-uint8_t generate_new_ledout(uint8_t old_ledout, char *led_str, uint8_t led_num)
-{
-    
-    if(led_num > 3)
-        return old_ledout;
-    
-    /*
-     LDRx = 00 — LED driver x is off (default power-up state).
-     LDRx = 01 — LED driver x is fully on (individual brightness and group dimming/blinking not controlled).
-     LDRx = 10 — LED driver x individual brightness can be controlled through its PWMx register.
-     LDRx = 11 — LED driver x individual brightness and group dimming/blinking can be controlled through its PWMx register and the GRPPWM registers.
-     */
-    
-    uint8_t ls_val=0xFF;
-    if(strcmp(led_str, "PWM") == 0)
-        ls_val = 0b10;
-    else if(strcmp(led_str, "GRP") == 0)
-        ls_val = 0b11;
-    else if(strcmp(led_str, "OFF") == 0)
-        ls_val = 0b00;
-    else if(strcmp(led_str, "ON") == 0)
-        ls_val = 0b01;
-    else
-    {
-        printf("Invalid led string for LED%d\n", led_num);
-        exit(1);
-    }
-    
-    
-    return (old_ledout & (~(0x03 << (led_num*2)))) | (ls_val << (led_num*2));
-}
 
-void get_curr_regs(void)
-{
-    writeBuf[0] = 0x80;   //set auto-increment for reading all registers
-    write(I2CFile, writeBuf, 1);
-    
-    read(I2CFile, readBuf, 0x0D);
-    
-    curr_regs.MODE1  = readBuf[0];
-    curr_regs.MODE2  = readBuf[1];
-    curr_regs.PWM0   = readBuf[2];
-    curr_regs.PWM1   = readBuf[3];
-    curr_regs.PWM2   = readBuf[4];
-    curr_regs.PWM3   = readBuf[5];
-    curr_regs.GRPPWM    = readBuf[6];
-    curr_regs.GRPFREQ   = readBuf[7];
-    curr_regs.LEDOUT    = readBuf[8];
-    curr_regs.SUBADR1   = readBuf[9];
-    curr_regs.SUBADR2   = readBuf[0x0A];
-    curr_regs.SUBADR3   = readBuf[0x0B];
-    curr_regs.ALLCALLADR= readBuf[0x0C];
-    
-    writeBuf[0] = 0x00;   //don't set auto-increment for reading input port
-    write(I2CFile, writeBuf, 1);
-    
-    read(I2CFile, readBuf, 1);
-    curr_regs.MODE1  = readBuf[0];
-}
-
-void print_curr_regs(void)
+void print_curr_regs(struct PCA_regs curr_regs)
 {
     printf("Register Status:\n");
     
@@ -347,17 +270,13 @@ int main (int argc, char **argv)
      arguments.led);*/
     
     
-    if(arguments.i2cbus == 1)
-        I2CFile = open("/dev/i2c-1", O_RDWR);     // Open the I2C device
-    else
-        I2CFile = open("/dev/i2c-0", O_RDWR);     // Open the I2C device
+    PCA9633_init(arguments.i2cbus, arguments.PCA_i2c_address);
+
     
-    ioctl(I2CFile, I2C_SLAVE, arguments.PCA_i2c_address);   // Specify the address of the I2C Slave to communicate with
-    
-    get_curr_regs();
+    struct PCA_regs curr_regs = PCA9633_get_curr_regs();
     
     if(arguments.verbosity_level >= 2)
-        print_curr_regs();
+        print_curr_regs(curr_regs);
     
     //    printf("  LEDOUT   0x%02X (use -l,-m,-n,-o to set)\n", curr_regs.LEDOUT);
     
@@ -385,10 +304,7 @@ int main (int argc, char **argv)
         {
             if(arguments.verbosity_level >= 2)
                 printf("Writing MODE1 value of 0x%02X\n", arguments.mode1);
-            writeBuf[0] = 0b00000000;
-            writeBuf[1] = new_mode1;
-            writeBuf[2] = 0;
-            write(I2CFile, writeBuf, 2);
+            PCA9633_write_register(PCA9633_REG_MODE1, new_mode1);
             changes_made++;
         }
     }
@@ -431,10 +347,7 @@ int main (int argc, char **argv)
         {
             if(arguments.verbosity_level >= 2)
                 printf("Writing MODE2 value of 0x%02X\n", arguments.mode2);
-            writeBuf[0] = 0b00000001;
-            writeBuf[1] = new_mode2;
-            writeBuf[2] = 0;
-            write(I2CFile, writeBuf, 2);
+            PCA9633_write_register(PCA9633_REG_MODE2, new_mode2);
             changes_made++;
         }
     }
@@ -444,10 +357,7 @@ int main (int argc, char **argv)
     {
         if(arguments.verbosity_level >= 2)
             printf("Writing PWM0 value of 0x%02X\n", arguments.pwm0);
-        writeBuf[0] = 0b00000010;
-        writeBuf[1] = arguments.pwm0;
-        writeBuf[2] = 0;
-        write(I2CFile, writeBuf, 2);
+        PCA9633_write_register(PCA9633_REG_PWM0, arguments.pwm0);
         changes_made++;
     }
     
@@ -455,10 +365,7 @@ int main (int argc, char **argv)
     {
         if(arguments.verbosity_level >= 2)
             printf("Writing PWM1 value of 0x%02X\n", arguments.pwm1);
-        writeBuf[0] = 0b00000011;
-        writeBuf[1] = arguments.pwm1;
-        writeBuf[2] = 0;
-        write(I2CFile, writeBuf, 2);
+        PCA9633_write_register(PCA9633_REG_PWM1, arguments.pwm1);
         changes_made++;
     }
     
@@ -466,10 +373,7 @@ int main (int argc, char **argv)
     {
         if(arguments.verbosity_level >= 2)
             printf("Writing PWM2 value of 0x%02X\n", arguments.pwm2);
-        writeBuf[0] = 0b00000100;
-        writeBuf[1] = arguments.pwm2;
-        writeBuf[2] = 0;
-        write(I2CFile, writeBuf, 2);
+        PCA9633_write_register(PCA9633_REG_PWM2, arguments.pwm2);
         changes_made++;
     }
     
@@ -477,10 +381,7 @@ int main (int argc, char **argv)
     {
         if(arguments.verbosity_level >= 2)
             printf("Writing PWM3 value of 0x%02X\n", arguments.pwm3);
-        writeBuf[0] = 0b00000101;
-        writeBuf[1] = arguments.pwm3;
-        writeBuf[2] = 0;
-        write(I2CFile, writeBuf, 2);
+        PCA9633_write_register(PCA9633_REG_PWM3, arguments.pwm3);
         changes_made++;
     }
     
@@ -488,10 +389,7 @@ int main (int argc, char **argv)
     {
         if(arguments.verbosity_level >= 2)
             printf("Writing GRPPWM value of 0x%02X\n", arguments.grppwm);
-        writeBuf[0] = 0b00000110;
-        writeBuf[1] = arguments.grppwm;
-        writeBuf[2] = 0;
-        write(I2CFile, writeBuf, 2);
+        PCA9633_write_register(PCA9633_REG_GRPPWM, arguments.grppwm);
         changes_made++;
     }
     
@@ -499,10 +397,8 @@ int main (int argc, char **argv)
     {
         if(arguments.verbosity_level >= 2)
             printf("Writing GRPFREQ value of 0x%02X\n", arguments.grpfreq);
-        writeBuf[0] = 0b00000111;
-        writeBuf[1] = arguments.grpfreq;
-        writeBuf[2] = 0;
-        write(I2CFile, writeBuf, 2);
+        
+        PCA9633_write_register(PCA9633_REG_GRPFREQ, arguments.grpfreq);
         changes_made++;
     }
     
@@ -510,46 +406,43 @@ int main (int argc, char **argv)
     
     if(arguments.led0_str != NULL)
     {
-        new_ledout = generate_new_ledout(new_ledout, arguments.led0_str, 0);
+        new_ledout = PCA9633_generate_new_ledout(new_ledout, arguments.led0_str, 0);
         if(arguments.verbosity_level >= 2)
             printf("LED0: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(arguments.led1_str != NULL)
     {
-        new_ledout = generate_new_ledout(new_ledout, arguments.led1_str, 1);
+        new_ledout = PCA9633_generate_new_ledout(new_ledout, arguments.led1_str, 1);
         if(arguments.verbosity_level >= 2)
             printf("LED1: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(arguments.led2_str != NULL)
     {
-        new_ledout = generate_new_ledout(new_ledout, arguments.led2_str, 2);
+        new_ledout = PCA9633_generate_new_ledout(new_ledout, arguments.led2_str, 2);
         if(arguments.verbosity_level >= 2)
             printf("LED2: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(arguments.led3_str != NULL)
     {
-        new_ledout = generate_new_ledout(new_ledout, arguments.led3_str, 3);
+        new_ledout = PCA9633_generate_new_ledout(new_ledout, arguments.led3_str, 3);
         if(arguments.verbosity_level >= 2)
             printf("LED3: new ledout = 0x%02X\n", new_ledout);
     }
     
     if(new_ledout != curr_regs.LEDOUT)
     {
-        writeBuf[0] = 0b00001000;       //LEDOUT
-        writeBuf[1] = new_ledout;
-        writeBuf[2] = 0;
-        write(I2CFile, writeBuf, 2);
+        PCA9633_write_register(PCA9633_REG_LEDOUT, new_ledout);//LEDOUT
         changes_made++;
     }
     
     if(changes_made)
     {
-        get_curr_regs();
+        curr_regs = PCA9633_get_curr_regs();
         if(arguments.verbosity_level >= 2)
-            print_curr_regs();
+            print_curr_regs(curr_regs);
     }
     else
     {
@@ -557,13 +450,13 @@ int main (int argc, char **argv)
             printf("Not updating any registers.\n");
     }
     
-    close(I2CFile);
+    PCA9633_close();
     
     int exitcode = 0;
     int pwm_val = curr_regs.PWM0;
     
     
-    
+
     
     uint8_t led_reg = (curr_regs.LEDOUT>>(arguments.exitcode_led*2)) & 0b11;
     switch (led_reg)
@@ -574,21 +467,21 @@ int main (int argc, char **argv)
             break;
         case 0b10:  //PWM
             switch(arguments.exitcode_led)
-        {
-            default:
-            case 0:
-                exitcode = curr_regs.PWM0;
-                break;
-            case 1:
-                exitcode = curr_regs.PWM1;
-                break;
-            case 2:
-                exitcode = curr_regs.PWM2;
-                break;
-            case 3:
-                exitcode = curr_regs.PWM3;
-                break;
-        }
+            {
+                default:
+                case 0:
+                    exitcode = curr_regs.PWM0;
+                    break;
+                case 1:
+                    exitcode = curr_regs.PWM1;
+                    break;
+                case 2:
+                    exitcode = curr_regs.PWM2;
+                    break;
+                case 3:
+                    exitcode = curr_regs.PWM3;
+                    break;
+            }
             break;
         case 0b01:  //ON
             exitcode = 255;  //full on
