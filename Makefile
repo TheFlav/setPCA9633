@@ -1,22 +1,8 @@
-## Makefile
-# change to your prefered compiler
-CC=gcc
-# replace with name of the executable
-OUTPUTNAME=setPCA9633
-# add all source files here but with '.o' instead of '.c'
-OBJS=PCA9633.o setPCA9633.o
-default: all
+all : setPCA9633 setPCA9633interactive
 
-all: $(OBJS)
-	$(CC) -o $(OUTPUTNAME) $(OBJS)
+setPCA9633 : setPCA9633.c PCA9633.c PCA9633.h
+	gcc -O3 -o setPCA9633 PCA9633.c setPCA9633.c
 
-debug: $(OBJS)
-	$(CC) -g -o $(OUTPUTNAME) $(OBJS)
+setPCA9633interactive : setPCA9633interactive.c PCA9633.c PCA9633.h
+	gcc -O3 -o setPCA9633interactive setPCA9633interactive.c PCA9633.c
 
-opt: $(OBJS)
-	$(CC) -O3 -o $(OUTPUTNAME) $(OBJS)
-
-.PHONY: clean
-clean:
-	rm *.o
-	rm $(OUTPUTNAME)

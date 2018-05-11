@@ -303,7 +303,7 @@ int main (int argc, char **argv)
         if(new_mode1 != curr_regs.MODE1)
         {
             if(arguments.verbosity_level >= 2)
-                printf("Writing MODE1 value of 0x%02X\n", arguments.mode1);
+                printf("Writing MODE1 value of 0x%02X\n", new_mode1);
             PCA9633_write_register(PCA9633_REG_MODE1, new_mode1);
             changes_made++;
         }
@@ -346,7 +346,7 @@ int main (int argc, char **argv)
         if(new_mode2 != curr_regs.MODE2)
         {
             if(arguments.verbosity_level >= 2)
-                printf("Writing MODE2 value of 0x%02X\n", arguments.mode2);
+                printf("Writing MODE2 value of 0x%02X\n", new_mode2);
             PCA9633_write_register(PCA9633_REG_MODE2, new_mode2);
             changes_made++;
         }

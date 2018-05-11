@@ -116,6 +116,7 @@ struct PCA_regs PCA9633_get_curr_regs(void)
 uint8_t PCA9633_get_curr_setting(uint8_t led_num)
 {
     struct PCA_regs curr_regs = PCA9633_get_curr_regs();
+    uint8_t led_val = 0;
     
     uint8_t led_bits = (curr_regs.LEDOUT >> (led_num * 2)) & 0b11;
     
@@ -133,35 +134,47 @@ uint8_t PCA9633_get_curr_setting(uint8_t led_num)
     {
         
         case 0b00:
-            return 0;
+            led_val = 0;
             break;
         case 0b01:
         default:
-            return 255;
+            led_val = 255;
             break;
         case 0b10:
             switch(led_num)
             {
                 default:
                 case 0:
-                    return curr_regs.PWM0;
+                    led_val = curr_regs.PWM0;
                     break;
                 case 1:
-                    return curr_regs.PWM1;
+                    led_val = curr_regs.PWM1;
                     break;
                 case 2:
-                    return curr_regs.PWM2;
+                    led_val = curr_regs.PWM2;
                     break;
                 case 3:
-                    return curr_regs.PWM3;
+                    led_val = curr_regs.PWM3;
                     break;
             }
             break;
         case 0b11:
-            return curr_regs.GRPPWM;
+            led_val = curr_regs.GRPPWM;
             break;
     }
-    return 255;
+    
+    if(!(curr_regs.MODE2 & 0b00010000))
+    {
+        /* MODE2 bit 4
+         INVRT[1] R/W 0* Output logic state not inverted. Value to use when no external driver used.
+         Applicable when OE = 0 for PCA9633 16-pin version.
+         1 Output logic state inverted. Value to use when external driver used.
+         Applicable when OE = 0 for PCA9633 16-pin version.
+         */
+        led_val = 255 - led_val;
+    }
+    
+    return led_val;
 }
 
 

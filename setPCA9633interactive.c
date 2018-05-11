@@ -105,13 +105,26 @@ void set_dimmer(uint8_t set_val)
 int init_dimmer()
 {
     int rc;
+    uint8_t invert_brightness = 0;
+    uint8_t save_brightness;
     
     PCA9633_init(1, 0x62);  //i2c-1 addr 0x62
+    
     struct PCA_regs curr_regs = PCA9633_get_curr_regs();
+
+    if(!(curr_regs.MODE2 & 0b00010000))
+        invert_brightness = 1;
+    
+    if(invert_brightness)
+        save_brightness = PCA9633_get_curr_setting(0 /* LEDn */);
 
     curr_regs.MODE2 |= 0b00000100;      //OUTDRV ON
     curr_regs.MODE2 |= 0b00010000;      //INVERT YES
     PCA9633_write_register(PCA9633_REG_MODE2, curr_regs.MODE2);
+    
+    //if we changed the invert parameter, then
+    if(invert_brightness)
+        set_dimmer(save_brightness);
     
     return 0;
 }
@@ -141,6 +154,10 @@ int main (int argc, char **argv)
     init_dimmer();
     
     double curr_setting = (double)read_dimmer();
+    
+    
+    
+    
     int percent = (int)((curr_setting+0.5001)*100.0/255.0);
     //printf("pct=%d, curr_setting=%f\n", percent, curr_setting);
     
