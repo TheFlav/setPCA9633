@@ -457,43 +457,11 @@ int main (int argc, char **argv)
     
     
 
-    
-    uint8_t led_reg = (curr_regs.LEDOUT>>(arguments.exitcode_led*2)) & 0b11;
-    switch (led_reg)
-    {
-        default:
-        case 0b11:  //GRP
-            exitcode = 10000;  //don't really know
-            break;
-        case 0b10:  //PWM
-            switch(arguments.exitcode_led)
-            {
-                default:
-                case 0:
-                    exitcode = curr_regs.PWM0;
-                    break;
-                case 1:
-                    exitcode = curr_regs.PWM1;
-                    break;
-                case 2:
-                    exitcode = curr_regs.PWM2;
-                    break;
-                case 3:
-                    exitcode = curr_regs.PWM3;
-                    break;
-            }
-            break;
-        case 0b01:  //ON
-            exitcode = 255;  //full on
-            break;
-        case 0b00:  //OFF
-            exitcode = 0;  //full on
-            break;
-    }
-    
+    exitcode = PCA9633_get_curr_setting(arguments.exitcode_led);
     
     if(arguments.verbosity_level == 1)
-        printf("LED%d = %d (%d)\n", arguments.exitcode_led, exitcode, led_reg);
+        printf("%d\n", PCA9633_get_curr_setting(arguments.exitcode_led));
+        
     return exitcode;
     
 }

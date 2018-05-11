@@ -42,23 +42,43 @@ uint8_t PCA9633_generate_new_ledout(uint8_t old_ledout, char *led_str, uint8_t l
      LDRx = 11 — LED driver x individual brightness and group dimming/blinking can be controlled through its PWMx register and the GRPPWM registers.
      */
     
+    //printf("SETTING: %s\n", led_str);
+    
     uint8_t ls_val=0xFF;
     if(strcmp(led_str, "PWM") == 0)
+    {
+        //printf("setting to PWM\n");
         ls_val = 0b10;
+    }
     else if(strcmp(led_str, "GRP") == 0)
+    {
+        //printf("setting to GRP\n");
         ls_val = 0b11;
+    }
     else if(strcmp(led_str, "OFF") == 0)
+    {
+        //printf("setting to OFF\n");
         ls_val = 0b00;
+    }
     else if(strcmp(led_str, "ON") == 0)
+    {
+        //printf("setting to ON\n");
         ls_val = 0b01;
+    }
     else
     {
         printf("Invalid led string for LED%d\n", led_num);
         exit(1);
     }
     
+    uint8_t led_mask = 0x03 << (led_num*2);
+    uint8_t masked_ledout = old_ledout & ~led_mask;
+    uint8_t led_bits = ls_val << (led_num*2);
+    uint8_t new_ledout = masked_ledout | led_bits;
+    //printf("old_ledout=0x%02X masked_ledout=0x%02X led_bits=0x%02X new_ledout=0x%02X\n", old_ledout, masked_ledout, led_bits, new_ledout);
+                        
     
-    return (old_ledout & (~(0x03 << (led_num*2)))) | (ls_val << (led_num*2));
+    return new_ledout;
 }
 
 struct PCA_regs PCA9633_get_curr_regs(void)
@@ -92,6 +112,58 @@ struct PCA_regs PCA9633_get_curr_regs(void)
     
     return curr_regs;
 }
+
+uint8_t PCA9633_get_curr_setting(uint8_t led_num)
+{
+    struct PCA_regs curr_regs = PCA9633_get_curr_regs();
+    
+    uint8_t led_bits = (curr_regs.LEDOUT >> (led_num * 2)) & 0b11;
+    
+    
+    /*
+     LDRx = 00 — LED driver x is off (default power-up state).
+     LDRx = 01 — LED driver x is fully on (individual brightness and group dimming/blinking not controlled).
+     LDRx = 10 — LED driver x individual brightness can be controlled through its PWMx register.
+     LDRx = 11 — LED driver x individual brightness and group dimming/blinking can be controlled through its PWMx register and the GRPPWM registers.
+     */
+    
+    //printf("led_bits=%d, curr_regs.PWM0=%d\n", led_bits, curr_regs.PWM0);
+    
+    switch(led_bits)
+    {
+        
+        case 0b00:
+            return 0;
+            break;
+        case 0b01:
+        default:
+            return 255;
+            break;
+        case 0b10:
+            switch(led_num)
+            {
+                default:
+                case 0:
+                    return curr_regs.PWM0;
+                    break;
+                case 1:
+                    return curr_regs.PWM1;
+                    break;
+                case 2:
+                    return curr_regs.PWM2;
+                    break;
+                case 3:
+                    return curr_regs.PWM3;
+                    break;
+            }
+            break;
+        case 0b11:
+            return curr_regs.GRPPWM;
+            break;
+    }
+    return 255;
+}
+
 
 void PCA9633_write_register(uint8_t reg_num, uint8_t reg_val)
 {
