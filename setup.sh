@@ -3,6 +3,7 @@ make
 mv "Freeplay LCD Brightness.sh" /home/pi/RetroPie/retropiemenu/"Freeplay LCD Brightness.sh"
 sudo cp /boot/freeplaycfg.txt /home/pi/freeplaycfg.txt
 sudo sh -c 'echo "/home/pi/Freeplay/setPCA9633/setFreeplayBacklight.sh > /dev/null" >> /home/pi/freeplaycfg.txt'
+mv setFreeplayBacklight.sh /home/pi/RetroPie/retropiemenu
 sudo mv /boot/freeplaycfg.txt /boot/freeplaycfg.bak
 sudo mv /home/pi/freeplaycfg.txt /boot/freeplaycfg.txt
 mv Brightness.png /home/pi/RetroPie/retropiemenu/icons/Brightness.png
