@@ -5,8 +5,8 @@ sudo sed -i 's|</gameList>|\t<game>\n\t\t<path>./Freeplay LCD Brightness.sh</pat
 
 cp /boot/freeplaycfg.txt /home/pi/freeplaycfg.txt
 sudo sh -c 'echo "/home/pi/Freeplay/setPCA9633/setFreeplayBacklight.sh > /dev/null" >> /home/pi/freeplaycfg.txt'
-mv /boot/freeplaycfg.txt /boot/freeplaycfg.bak
-mv /home/pi/freeplaycfg.txt /boot/freeplaycfg.txt
+sudo mv /boot/freeplaycfg.txt /boot/freeplaycfg.bak
+sudo mv /home/pi/freeplaycfg.txt /boot/freeplaycfg.txt
 cp Brightness.png /home/pi/RetroPie/retropiemenu/icons/Brightness.png
 
 sudo sh -c 'echo "[pi3]\ndtparam=i2c1_baudrate=400000 #makes a big speed difference\ndtoverlay=i2c1-bcm2708,sda1_pin=44,scl1_pin=45,pin_func=6\n" >> /boot/config.txt'
