@@ -9,4 +9,4 @@ sudo mv /boot/freeplaycfg.txt /boot/freeplaycfg.bak
 sudo mv /home/pi/freeplaycfg.txt /boot/freeplaycfg.txt
 cp Brightness.png /home/pi/RetroPie/retropiemenu/icons/Brightness.png
 
-sudo sh -c 'echo "[pi3]\ndtparam=i2c1_baudrate=400000 #makes a big speed difference\ndtoverlay=i2c1-bcm2708,sda1_pin=44,scl1_pin=45,pin_func=6\n" >> /boot/config.txt'
+sudo sh -c 'echo "[pi3]\ndtparam=i2c1_baudrate=400000 #makes a big speed difference\ndtoverlay=i2c1-bcm2708,sda1_pin=44,scl1_pin=45,pin_func=6\n" >> /boot/config.txt\n[all]'
