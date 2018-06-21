@@ -270,7 +270,18 @@ int main (int argc, char **argv)
      arguments.led);*/
     
     
-    PCA9633_init(arguments.i2cbus, arguments.PCA_i2c_address);
+    if(PCA9633_init(arguments.i2cbus, arguments.PCA_i2c_address) != 0)
+    {
+        printf("Error initializing i2c bus %d.\n", arguments.i2cbus);
+        return -1;
+    }
+    
+    if(!PCA9633_is_present())
+    {
+        printf("No chip found at address 0x%02X.\n", arguments.PCA_i2c_address);
+        return -1;
+    }
+    
 
     
     struct PCA_regs curr_regs = PCA9633_get_curr_regs();

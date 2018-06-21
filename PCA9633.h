@@ -10,6 +10,7 @@ void PCA9633_write_register(uint8_t reg_num, uint8_t reg_val);
 int PCA9633_init(uint8_t i2cbusnum, uint8_t i2caddress);
 void PCA9633_close(void);
 uint8_t PCA9633_get_curr_setting(uint8_t led_num);
+int PCA9633_is_present();
 
 
 struct PCA_regs

@@ -3,6 +3,7 @@ Set PCA9633 via i2c on Raspberry Pi
 Raspberry Pi executable to set the NXP PCA9633
 
 make
+
 sudo raspi-config   (then under interface options, enable I2C and reboot)
 
 
