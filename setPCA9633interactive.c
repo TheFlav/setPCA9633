@@ -108,7 +108,17 @@ int init_dimmer()
     uint8_t invert_brightness = 0;
     uint8_t save_brightness;
     
-    PCA9633_init(1, 0x62);  //i2c-1 addr 0x62
+    //i2c-1 addr 0x62
+    if(PCA9633_init(1, 0x62) != 0)
+    {
+        exit(EXIT_FAILURE);
+    }
+    
+    if(!PCA9633_is_present())
+    {
+        exit(EXIT_FAILURE);
+    }
+    
     
     struct PCA_regs curr_regs = PCA9633_get_curr_regs();
 

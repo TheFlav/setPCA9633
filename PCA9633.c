@@ -81,6 +81,26 @@ uint8_t PCA9633_generate_new_ledout(uint8_t old_ledout, char *led_str, uint8_t l
     return new_ledout;
 }
 
+int PCA9633_is_present()
+{
+    int i=0;
+    
+    writeBuf[0] = 0x80;   //set auto-increment for reading all registers
+    write(I2CFile, writeBuf, 1);
+    
+    read(I2CFile, readBuf, 0x0D);
+    
+    while(readBuf[i] == 0)
+    {
+        if(i >= 0x0D)   //we tested all the registers, and they were all 0
+            return 0;   //so the chip must not be there
+        
+        i++;
+    }
+    
+    return 1;
+}
+
 struct PCA_regs PCA9633_get_curr_regs(void)
 {
     struct PCA_regs curr_regs;
@@ -103,6 +123,7 @@ struct PCA_regs PCA9633_get_curr_regs(void)
     curr_regs.SUBADR2   = readBuf[0x0A];
     curr_regs.SUBADR3   = readBuf[0x0B];
     curr_regs.ALLCALLADR= readBuf[0x0C];
+    
     
     writeBuf[0] = 0x00;   //don't set auto-increment for reading input port
     write(I2CFile, writeBuf, 1);
