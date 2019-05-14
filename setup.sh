@@ -10,7 +10,7 @@ fi
 if  grep -q "setFreeplayBacklight.sh" /etc/rc.local ; then
 	echo "Backlight already setup"
 else
-	sudo sed -i 's|exit 0|/home/pi/Freeplay/setPCA9633/setFreeplayBacklight.sh > /dev/null\n\nexit 0|' /etc/rc.local
+	sudo sed -i 's|^exit 0|/home/pi/Freeplay/setPCA9633/setFreeplayBacklight.sh > /dev/null\n\nexit 0|' /etc/rc.local
 fi
 
 cp Brightness.png /home/pi/RetroPie/retropiemenu/icons/Brightness.png
