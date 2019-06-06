@@ -20,3 +20,5 @@ elif [ "$var1" == "OFF" ] || [ "$var1" == "off" ] || [ "$var1" == "0" ]; then
 else
     /home/pi/Freeplay/setPCA9633/setPCA9633 -y 1 -a 0x62 -d ON -w WAKE -i YES -l PWM -p "$var1"
 fi
+
+exit 0
