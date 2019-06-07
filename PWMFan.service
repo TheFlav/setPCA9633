@@ -1,0 +1,14 @@
+[Unit]
+Description=Freeplay PWM Fan that changes speed based on CPU temperature
+After=basic.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=2
+User=root
+ExecStart=/home/pi/Freeplay/setPCA9633/PWMFan.sh
+
+[Install]
+WantedBy=multi-user.target
