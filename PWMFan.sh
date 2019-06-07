@@ -4,6 +4,7 @@ declare TEMP
 FAN_ON=false
 SLEEP_DELAY=15
 while true; do
+	TEMP=$(vcgencmd measure_temp | cut -d= -f2 | cut -d. -f1)
 	if [[ "$TEMP" -lt 40 && "$FAN_ON" = true   ]]; then
 		/home/pi/Freeplay/setPCA9633/setPCA9633 -y 1 -a 0x62 -d ON -w WAKE -i YES -m OFF > /dev/null
 		FAN_ON=false
