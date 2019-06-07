@@ -8,7 +8,7 @@
 #include "PCA9633.h"
 
 /* Program documentation. */
-static char doc[] = "Set PCA9553 via i2c, always use -a, only use one of -l, -p, or -s";
+static char doc[] = "Set PCA9633 via i2c, always use -a, only use one of -l, -p, or -s";
 
 /* A description of the arguments we accept. */
 static char args_doc[] = "VALUE";
@@ -16,7 +16,7 @@ static char args_doc[] = "VALUE";
 
 /* The options we understand. */
 static struct argp_option options[] = {
-    {"address",  'a', "0xXX",                  0,  "i2c Address of PCA9553" },
+    {"address",  'a', "0xXX",                  0,  "i2c Address of PCA9633" },
     {"i2cbus",   'y', "[0|1]",                 0,  "use /dev/i2c-0 or /dev/i2c-1 (hint: see i2cdetect command)" },
     {"led0",     'l', "[ON|OFF|PWM|GRP]",      0,  "set led0 to ON, OFF, PWM, or GRP" },
     {"led1",     'm', "[ON|OFF|PWM|GRP]",      0,  "set led1 to ON, OFF, PWM, or GRP" },
