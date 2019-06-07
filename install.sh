@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-dialog --title "Freeplay PWM Utilities (Using PCA9633)" \ 
+dialog --title "Freeplay PWM Utilities (Using PCA9633)" \
 	--yesno "Would you like to also install PWM fan control in addition to brightness control?\nThis requires you follow the guide at <URL>" 0 0
-
+clear
 RESP=$?
+
 INSTALL_DIR=/home/pi/Freeplay/$(ls /home/pi/Freeplay | grep -i setpca9633)
 cd $INSTALL_DIR
 case $RESP in
