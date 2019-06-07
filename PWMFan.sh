@@ -4,7 +4,7 @@ declare TEMP
 FAN_ON=false
 SLEEP_DELAY=15
 while true; do
-	if [[ "$TEMP" -lt 45 && "$FAN_ON" = true   ]]; then
+	if [[ "$TEMP" -lt 40 && "$FAN_ON" = true   ]]; then
 		/home/pi/Freeplay/setPCA9633/setPCA9633 -y 1 -a 0x62 -d ON -w WAKE -i YES -m OFF > /dev/null
 		FAN_ON=false
 	elif [[ "$TEMP" -ge 45 && "$TEMP" -le 60  ]]; then
