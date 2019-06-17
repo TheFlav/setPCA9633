@@ -12,7 +12,8 @@ case $RESP in
 	255) echo "Exiting installation"; exit 1;;
 esac
 
-make
+make setPCA9633
+make setPCA9633interactive
 cp $INSTALL_DIR/Freeplay\ LCD\ Brightness.sh /home/pi/RetroPie/retropiemenu/Freeplay\ LCD\ Brightness.sh
 
 if  grep -q "Freeplay LCD Brightness" /opt/retropie/configs/all/emulationstation/gamelists/retropie/gamelist.xml ; then
