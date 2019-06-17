@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-dialog --title "Freeplay PWM Utilities (Using PCA9633)" \ 
+dialog --title "Freeplay PWM Utilities (Using PCA9633)" \
 	--yesno "Would you like to also install PWM fan control in addition to brightness control?\nThis requires you follow the guide at <URL>" 0 0
-
+clear
 RESP=$?
+
 INSTALL_DIR=/home/pi/Freeplay/$(ls /home/pi/Freeplay | grep -i setpca9633)
 cd $INSTALL_DIR
 case $RESP in
@@ -12,7 +13,8 @@ case $RESP in
 	255) echo "Exiting installation"; exit 1;;
 esac
 
-make
+make setPCA9633
+make setPCA9633interactive
 cp $INSTALL_DIR/Freeplay\ LCD\ Brightness.sh /home/pi/RetroPie/retropiemenu/Freeplay\ LCD\ Brightness.sh
 
 if  grep -q "Freeplay LCD Brightness" /opt/retropie/configs/all/emulationstation/gamelists/retropie/gamelist.xml ; then
