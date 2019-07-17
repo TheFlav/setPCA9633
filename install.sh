@@ -15,12 +15,12 @@ esac
 
 make setPCA9633
 make setPCA9633interactive
-cp $INSTALL_DIR/Freeplay\ LCD\ Brightness.sh /home/pi/RetroPie/retropiemenu/Freeplay\ LCD\ Brightness.sh
+cp $INSTALL_DIR/Freeplay\ LCD\ Brightness.sh /home/pi/RetroPie/retropiemenu/Freeplay\ Options/Freeplay\ LCD\ Brightness.sh
 
 if  grep -q "Freeplay LCD Brightness" /opt/retropie/configs/all/emulationstation/gamelists/retropie/gamelist.xml ; then
 	echo "Brightness Control has already been added to RetroPie Menu"
 else
-	sudo sed -i 's|</gameList>|\t<game>\n\t\t<path>./Freeplay LCD Brightness.sh</path>\n\t\t<name>Freeplay Brightness Control</name>\n\t\t<desc>Control your screen brightness. Persists on reboot.</desc>\n\t\t<image>./icons/Brightness.png</image>\n\t\t<playcount>0</playcount>\n\t\t<lastplayed></lastplayed>\n\t</game>\n\t</gameList>|' /opt/retropie/configs/all/emulationstation/gamelists/retropie/gamelist.xml
+	sudo sed -i 's|</gameList>|\t<game>\n\t\t<path>./Freeplay Options/Freeplay LCD Brightness.sh</path>\n\t\t<name>Freeplay Brightness Control</name>\n\t\t<desc>Control your screen brightness. Persists on reboot.</desc>\n\t\t<image>./icons/Brightness.png</image>\n\t\t<playcount>0</playcount>\n\t\t<lastplayed></lastplayed>\n\t</game>\n\t</gameList>|' /opt/retropie/configs/all/emulationstation/gamelists/retropie/gamelist.xml
 fi
 
 if  grep -q "setFreeplayBacklight.sh" /etc/rc.local ; then
