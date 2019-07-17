@@ -15,7 +15,9 @@ esac
 
 make setPCA9633
 make setPCA9633interactive
-cp $INSTALL_DIR/Freeplay\ LCD\ Brightness.sh /home/pi/RetroPie/retropiemenu/Freeplay\ Options/Freeplay\ LCD\ Brightness.sh
+
+mkdir -p "/home/pi/RetroPie/retropiemenu/Freeplay Options"
+cp $INSTALL_DIR/Freeplay\ LCD\ Brightness.sh "/home/pi/RetroPie/retropiemenu/Freeplay Options/Freeplay LCD Brightness.sh"
 
 if  grep -q "Freeplay LCD Brightness" /opt/retropie/configs/all/emulationstation/gamelists/retropie/gamelist.xml ; then
 	echo "Brightness Control has already been added to RetroPie Menu"
